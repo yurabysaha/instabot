@@ -1,3 +1,5 @@
+import json
+
 import dropbox
 import os
 import requests
@@ -8,11 +10,18 @@ from selenium.webdriver.common.keys import Keys
 
 from db_server import InstaDbService
 
+CONFIG = {}
+
+# Load Config Data
+with open('./config.json') as config_f:
+    default_config = json.load(config_f)
+    for key, value in default_config.items():
+        CONFIG[key] = os.getenv(key, value)
+
 
 class InstaParser:
     def __init__(self, username, password):
         self.username = username
-        # self.username = 'ihor_yanovchyk'
         self.password = password
         self.browser = None
 
@@ -109,7 +118,7 @@ class InstaParser:
 
             # Get photo and upload to dropbox
             r = requests.get(content, allow_redirects=True)
-            access_token = 'rO7DzTSod8AAAAAAAAAAazeDmyn6AfsaEpdPIOO-HAEPcBXjkiZdcvXDTgAgAvLh'
+            access_token = CONFIG['DROPBOX_ACCESS_TOKEN']
             dbx = dropbox.Dropbox(access_token)
 
             upload_results = dbx.files_upload(r.content, '/photo_files/{}.{}'.format(i[0], r.headers['content-type'].split('/')[-1]))
@@ -132,7 +141,7 @@ class InstaParser:
         # test.send_keys(os.getcwd() + "/python.png")
         # test.submit()
         from InstagramAPI import InstagramAPI
-        api = InstagramAPI("therealbooty_squad", "nmvETGay")
+        api = InstagramAPI(self.username, self.password)
         api.login()
         api.uploadPhoto(os.getcwd() + "/python.jpg")
         pass
@@ -147,7 +156,7 @@ class InstaParser:
             self.browser = None
 
 
-parse = InstaParser('therealbooty_squad', 'nmvETGay')
+parse = InstaParser(CONFIG['INSTA_USERNAME'], CONFIG['INSTA_PASSWORD'])
 # parse.login(mobile=True)
 parse.post_new_image()
 # parse.parse_permalink()
