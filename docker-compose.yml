@@ -25,7 +25,7 @@ services:
       - grafana
       - mongo
     ports:
-      - 80:80
+      - 4000:80
     networks:
       - instapy-net
   config:
