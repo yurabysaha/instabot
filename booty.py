@@ -87,7 +87,6 @@ class InstaParser:
             for i in els:
                 try:
                     insta_url = i.get_attribute("href")
-                    # print(insta_url)
 
                     self.db.add_new_saved_post(insta_url)
 
@@ -173,23 +172,37 @@ class InstaParser:
 
     def prepeare_text_for_post(self, post):
 
-        result = '🍑 therealbooty_squad 🍑\n\nModel: @{}\nPhoto: @therealbooty_squad\n\n#therealbooty_squad '.format(post[4])
+        available_hashtags = [
+            "#booty🍑", "#fitgirl", "#fitfam", "#modelsofinstagram",
+            "#instabooty", "#instabootylicious", "#bigbutt", "#pantyhose", "#fishnets", "#tights",
+            "#whitegirlsevolving", "#bigbootywhitegirl", "#bootylover", "#bootybooty",
+            "#teamnaturalbooty", "#bigbuttsdontlie#whootybooty", "#whootywednesday",
+            "#slimthickgirls", "#slimthick #bubblebutt", "#curves", "#sexycurves", "#bootyislife",
+            "#thatass", "#phatbutt", "#instabootylicious", "#asssofine", "#instabooty", "#pantyhose",
+            "#pantyhosegirl", "#blacktights", "#tights", "#bootyfull", "#assassasss", "#bubblebooty",
+            "#bootylover", "#bootybooty", "#assfordays", "#assassass", "#bootysofine",
+            "#bigbuttsdontlie", "#whootybooty", "#whootywednesday", "#whitegirlsevolving",
+            "#bigbootywhitegirls", "#picoftheday", "#miamimodel", "#vegasmodel", "#lamodel", "#bootytransformation",
+            "#fitnessmotivation", "#fitgoals", "#fitspo", "#bodyempowerment", "#healthylifestyle",
+            "#freethenipplemovement", "#fitnessmotivation", "#wshhfitness",
+            "#miamimodel", "#fitnessmodel", "#instafitness", "#fitnessaddict", "#humpday",
+            "#thebooty", "#belfie", "#bootygainz", "#ycmediainc", "#girlswholift", "#datbooty",
+            "#model", "#miamimodel", "#lasvegasmodel"
+        ]
+        available_messages = [
+            "Do you like it?", "Tag your friend who wants to eat this peachy", "What do you think, Comment it!",
+            "Like it?", "Give your feedback in  Comment", "Love it?", "Tag your partner in crime!",
+            "This beauty is one of the our favourite up and coming models", "Give her a follow, she has a bright future",
+            "What`s in your fridge?", "therealbooty_squad", "Who wants this baby?",
+            "What`s your favourite thing about 🍑?", "Need your opinion!", "Few comments for this baby!",
+            "Woow, nice shot!", "Look at this girl!", "Look at this!", "Just a cool shot in your feed!",
+            "Looks good, yeah?"
+        ]
 
-        available_hashtags = ["#booty🍑", "#fitgirl", "#fitfam", "#modelsofinstagram",
-                              "#instabooty", "#instabootylicious", "#bigbutt", "#pantyhose", "#fishnets", "#tights",
-                              "#whitegirlsevolving", "#bigbootywhitegirl", "#bootylover", "#bootybooty",
-                              "#teamnaturalbooty", "#bigbuttsdontlie#whootybooty", "#whootywednesday",
-                              "#slimthickgirls", "#slimthick#bubblebutt", "#curves", "#sexycurves", "#bootyislife",
-                              "#thatass", "#phatbutt", "#instabootylicious", "#asssofine", "#instabooty", "#pantyhose",
-                              "#pantyhosegirl", "#blacktights", "#tights", "#bootyfull", "#assassasss", "#bubblebooty",
-                              "#bootylover", "#bootybooty", "#assfordays", "#assassass", "#bootysofine",
-                              "#bigbuttsdontlie", "#whootybooty", "#whootywednesday", "#whitegirlsevolving",
-                              "#bigbootywhitegirls", "#picoftheday", "#miamimodel", "#vegasmodel", "#lamodel", "#bootytransformation",
-                              "#fitnessmotivation", "#fitgoals", "#fitspo", "#bodyempowerment", "#healthylifestyle",
-                              "#freethenipplemovement", "#squat4datbody", "#fitnessmotivation", "#wshhfitness",
-                              "#miamimodel", "#fitnessmodel", "#instafitness", "#fitnessaddict", "#humpday",
-                              "#thebooty", "#belfie", "#bootygainz", "#ycmediainc", "#girlswholift", "#datbooty",
-                              "#model", "#miamimodel", "#lasvegasmodel"]
+        result = '🍑 {} 🍑\n\nModel: @{}\nPhoto: @therealbooty_squad\n\n#therealbooty_squad '.format(
+            random.choice(available_messages),
+            post[4]
+        )
 
         result += ' '.join(str(e) for e in random.sample(available_hashtags, random.randrange(15,25)))
         return result
@@ -199,17 +212,17 @@ parse = InstaParser(CONFIG['INSTA_USERNAME'], CONFIG['INSTA_PASSWORD'])
 
 # Parse functionality.
 
-parse.login(mobile=False)
+# parse.login(mobile=False)
 # parse.post_new_image()
 # parse.parse_permalink()
-parse.parse_additional_info()
+# parse.parse_additional_info()
 # parse.close_browser()
 
 # Set schedule for posting new post.
-# schedule.every(1).hours.do(parse.post_new_image)
-# schedule.every(1).minute.do(parse.post_new_image)
+schedule.every(4).hours.do(parse.post_new_image)
+# schedule.every(6).minutes.do(parse.post_new_image)
 
-# while True:
+while True:
     # Checks whether a scheduled task is pending to run or not
-    # schedule.run_pending()
-    # time.sleep(1)
+    schedule.run_pending()
+    time.sleep(1)
