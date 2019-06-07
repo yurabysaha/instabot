@@ -2,12 +2,16 @@ import json
 
 import dropbox
 import os
+
+import imageio
 import requests
 import time
+
+import schedule
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
-
+from InstagramAPI import InstagramAPI, random, VideoFileClip
 from db_server import InstaDbService
 
 CONFIG = {}
@@ -40,7 +44,7 @@ class InstaParser:
             option.add_experimental_option("mobileEmulation", mobile_emulation)
             self.browser = webdriver.Chrome('./drivers/chromedriver', desired_capabilities=option.to_capabilities())
         else:
-            # option.add_argument("user-data-dir=/home/yura/.config/google-chrome/Default")
+            option.add_argument("user-data-dir=/home/yura/.config/google-chrome/Default")
             self.browser = webdriver.Chrome('./drivers/chromedriver', chrome_options=option)
             # self.browser = webdriver.Remote("http://localhost:4444/wd/hub", webdriver.DesiredCapabilities.CHROME.copy())
             # self.browser.maximize_window()
@@ -107,6 +111,7 @@ class InstaParser:
         """
 
         rows = self.db.get_urls_for_parse_info()
+        self.browser.implicitly_wait(1)
         for i in rows:
             self.browser.get(i[1])
             try:
@@ -118,8 +123,7 @@ class InstaParser:
 
             # Get photo and upload to dropbox
             r = requests.get(content, allow_redirects=True)
-            access_token = CONFIG['DROPBOX_ACCESS_TOKEN']
-            dbx = dropbox.Dropbox(access_token)
+            dbx = dropbox.Dropbox(CONFIG['DROPBOX_ACCESS_TOKEN'])
 
             upload_results = dbx.files_upload(r.content, '/photo_files/{}.{}'.format(i[0], r.headers['content-type'].split('/')[-1]))
 
@@ -127,24 +131,36 @@ class InstaParser:
 
     def post_new_image(self):
         """Post new image"""
-        # new_post_btn = self.browser.find_element_by_xpath("//span[@aria-label='New Post']")
-        # new_post_btn.click()
 
-        # actions = ActionChains(self.browser)
-        # element = self.browser.find_element_by_xpath("//span[@aria-label='New Post']")
-        # actions.move_to_element(element)
-        # actions.click()
-        # actions.send_keys(os.getcwd() + "/python.png")
-        # actions.perform()
-        #
-        # test = self.browser.find_elements_by_xpath("//input[@accept='image/jpeg']")[2]
-        # test.send_keys(os.getcwd() + "/python.png")
-        # test.submit()
-        from InstagramAPI import InstagramAPI
-        api = InstagramAPI(self.username, self.password)
-        api.login()
-        api.uploadPhoto(os.getcwd() + "/python.jpg")
-        pass
+        dbx = dropbox.Dropbox(CONFIG['DROPBOX_ACCESS_TOKEN'])
+
+        unposted_posts = self.db.get_unposted_posts().fetchall()
+
+        if unposted_posts:
+            next_post = random.choice(unposted_posts)
+
+            file_info = dbx.files_get_metadata(next_post[2])
+            file_extension = file_info.name.split('.')[-1]
+            saved_file_path = os.getcwd() +'/downloads/tmp.' + file_extension
+            dbx.files_download_to_file(saved_file_path, next_post[2])
+
+            api = InstagramAPI(self.username, self.password)
+            api.login()
+
+            text_for_post = self.prepeare_text_for_post(next_post)
+
+            if file_extension == 'jpeg':
+                api.uploadPhoto(saved_file_path, caption=text_for_post)
+            else:
+                clip = VideoFileClip(saved_file_path)
+                clip.save_frame(os.getcwd() + "/downloads/thumbnail.jpeg", t=2)  # saves the frame a t=2s
+
+                api.uploadVideo(saved_file_path, os.getcwd() + '/downloads/thumbnail.jpeg', caption=text_for_post)
+
+            self.db.mark_as_posted(next_post[0])
+
+        else:
+            print('No post for posting!!!')
 
     def close_browser(self):
         """Close browser if it opened"""
@@ -155,10 +171,45 @@ class InstaParser:
                 pass
             self.browser = None
 
+    def prepeare_text_for_post(self, post):
+
+        result = '🍑 therealbooty_squad 🍑\n\nModel: @{}\nPhoto: @therealbooty_squad\n\n#therealbooty_squad '.format(post[4])
+
+        available_hashtags = ["#booty🍑", "#fitgirl", "#fitfam", "#modelsofinstagram",
+                              "#instabooty", "#instabootylicious", "#bigbutt", "#pantyhose", "#fishnets", "#tights",
+                              "#whitegirlsevolving", "#bigbootywhitegirl", "#bootylover", "#bootybooty",
+                              "#teamnaturalbooty", "#bigbuttsdontlie#whootybooty", "#whootywednesday",
+                              "#slimthickgirls", "#slimthick#bubblebutt", "#curves", "#sexycurves", "#bootyislife",
+                              "#thatass", "#phatbutt", "#instabootylicious", "#asssofine", "#instabooty", "#pantyhose",
+                              "#pantyhosegirl", "#blacktights", "#tights", "#bootyfull", "#assassasss", "#bubblebooty",
+                              "#bootylover", "#bootybooty", "#assfordays", "#assassass", "#bootysofine",
+                              "#bigbuttsdontlie", "#whootybooty", "#whootywednesday", "#whitegirlsevolving",
+                              "#bigbootywhitegirls", "#picoftheday", "#miamimodel", "#vegasmodel", "#lamodel", "#bootytransformation",
+                              "#fitnessmotivation", "#fitgoals", "#fitspo", "#bodyempowerment", "#healthylifestyle",
+                              "#freethenipplemovement", "#squat4datbody", "#fitnessmotivation", "#wshhfitness",
+                              "#miamimodel", "#fitnessmodel", "#instafitness", "#fitnessaddict", "#humpday",
+                              "#thebooty", "#belfie", "#bootygainz", "#ycmediainc", "#girlswholift", "#datbooty",
+                              "#model", "#miamimodel", "#lasvegasmodel"]
+
+        result += ' '.join(str(e) for e in random.sample(available_hashtags, random.randrange(15,25)))
+        return result
+
 
 parse = InstaParser(CONFIG['INSTA_USERNAME'], CONFIG['INSTA_PASSWORD'])
-# parse.login(mobile=True)
-parse.post_new_image()
+
+# Parse functionality.
+
+parse.login(mobile=False)
+# parse.post_new_image()
 # parse.parse_permalink()
-# parse.parse_additional_info()
-parse.close_browser()
+parse.parse_additional_info()
+# parse.close_browser()
+
+# Set schedule for posting new post.
+# schedule.every(1).hours.do(parse.post_new_image)
+# schedule.every(1).minute.do(parse.post_new_image)
+
+# while True:
+    # Checks whether a scheduled task is pending to run or not
+    # schedule.run_pending()
+    # time.sleep(1)

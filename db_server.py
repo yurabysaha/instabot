@@ -37,7 +37,8 @@ class InstaDbService:
                                                     insta_url text NOT NULL UNIQUE,
                                                     dropbox_id text,
                                                     owner_url text,
-                                                    owner_name text
+                                                    owner_name text,
+                                                    posted_at text
                                                 ); """
         try:
             c = self.conn.cursor()
@@ -82,4 +83,23 @@ class InstaDbService:
 
         c = self.conn.cursor()
         c.execute(sql, data)
+        self.conn.commit()
+
+    def get_unposted_posts(self):
+        """Get all unposted post.
+
+        :return list with rows
+        """
+
+        sql = """SELECT * FROM saved_posts WHERE dropbox_id IS NOT NULL AND posted_at IS NULL;"""
+        c = self.conn.cursor()
+        rows = c.execute(sql)
+        return rows
+
+    def mark_as_posted(self, post_id):
+        """Mark post as posted in DB"""
+
+        sql = """UPDATE saved_posts SET posted_at = datetime('now') WHERE id = ?;"""
+        c = self.conn.cursor()
+        c.execute(sql, (post_id,))
         self.conn.commit()
