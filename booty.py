@@ -6,12 +6,12 @@ import os
 import imageio
 import requests
 import time
-
+import random
 import schedule
 from selenium import webdriver
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
-from InstagramAPI import InstagramAPI, random, VideoFileClip
+from InstagramAPI import InstagramAPI, VideoFileClip
 from db_server import InstaDbService
 
 CONFIG = {}
